@@ -1,3 +1,14 @@
+mod graph;
+
+use graph::Graph;
+
 fn main() {
-    println!("Hello, world!");
+    let mut g = Graph::new();
+    let n1 = g.add_node("first");
+    let n2 = g.add_node("second");
+    let n3 = g.add_node("third");
+    g.add_edge(n1, n2);
+    g.add_edge(n2, n3);
+    g.add_edge(n3, n1);
+    g.dump();
 }
