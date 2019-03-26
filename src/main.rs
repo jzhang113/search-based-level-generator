@@ -1,5 +1,4 @@
 mod graph;
-
 use graph::Graph;
 
 fn main() {
@@ -11,4 +10,8 @@ fn main() {
     g.add_edge(n2, n3);
     g.add_edge(n3, n1);
     g.dump();
+
+    use std::fs::File;
+    let mut f = File::create("output.dot").unwrap();
+    dot::render(&g, &mut f).unwrap()
 }

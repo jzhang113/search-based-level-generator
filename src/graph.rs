@@ -1,21 +1,39 @@
 type NodeIndex = usize;
-type EdgeIndex = usize;
-
-#[derive(Debug)]
-pub struct NodeData {
-    id: String,
-    first_edge: Option<EdgeIndex>,
-}
-
-#[derive(Debug)]
-pub struct EdgeData {
-    target: NodeIndex,
-    next_edge: Option<EdgeIndex>,
-}
+type EdgeIndex<'a> = &'a (usize, usize);
 
 pub struct Graph {
-    nodes: Vec<NodeData>,
-    edges: Vec<EdgeData>,
+    nodes: Vec<&'static str>,
+    edges: Vec<(usize, usize)>,
+}
+
+impl<'a> dot::Labeller<'a, NodeIndex, EdgeIndex<'a>> for Graph {
+    fn graph_id(&'a self) -> dot::Id<'a> {
+        dot::Id::new("graph").unwrap()
+    }
+    fn node_id(&'a self, n: &NodeIndex) -> dot::Id<'a> {
+        dot::Id::new(format!("N{}", n)).unwrap()
+    }
+    fn node_label<'b>(&'b self, n: &NodeIndex) -> dot::LabelText<'b> {
+        dot::LabelText::LabelStr(self.nodes[*n].into())
+    }
+    // fn edge_label<'b>(&'b self, _: &EdgeIndex) -> dot::LabelText<'b> {
+    //     dot::LabelText::LabelStr("&sube;".into())
+    // }
+}
+
+impl<'a> dot::GraphWalk<'a, NodeIndex, EdgeIndex<'a>> for Graph {
+    fn nodes(&self) -> dot::Nodes<'a, NodeIndex> {
+        (0..self.nodes.len()).collect()
+    }
+    fn edges(&'a self) -> dot::Edges<'a, EdgeIndex<'a>> {
+        self.edges.iter().collect()
+    }
+    fn source(&self, e: &EdgeIndex) -> NodeIndex {
+        e.0
+    }
+    fn target(&self, e: &EdgeIndex) -> NodeIndex {
+        e.1
+    }
 }
 
 impl Graph {
@@ -26,23 +44,19 @@ impl Graph {
         }
     }
 
-    pub fn add_node(&mut self, id: &str) -> NodeIndex {
+    pub fn add_node(&mut self, id: &'static str) -> NodeIndex {
         let index = self.nodes.len();
-        self.nodes.push(NodeData {
-            id: String::from(id),
-            first_edge: None,
-        });
+        self.nodes.push(id);
         index
     }
 
     pub fn add_edge(&mut self, src: NodeIndex, dest: NodeIndex) {
-        let index = self.edges.len();
-        let data = &mut self.nodes[src];
-        self.edges.push(EdgeData {
-            target: dest,
-            next_edge: data.first_edge,
-        });
-        data.first_edge = Some(index);
+        self.add_edge_dir(src, dest);
+        self.add_edge_dir(dest, src);
+    }
+
+    pub fn add_edge_dir(&mut self, src: NodeIndex, dest: NodeIndex) {
+        self.edges.push((src, dest));
     }
 
     pub fn dump(&self) {
