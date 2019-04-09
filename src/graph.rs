@@ -1,20 +1,29 @@
 type NodeIndex = usize;
 type EdgeIndex<'a> = &'a (usize, usize);
 
+#[derive(Debug)]
+pub struct NodeData {
+    name: &'static str,
+    weight: u32,
+}
+
 pub struct Graph {
-    nodes: Vec<&'static str>,
+    nodes: Vec<NodeData>,
     edges: Vec<(usize, usize)>,
 }
 
 impl<'a> dot::Labeller<'a, NodeIndex, EdgeIndex<'a>> for Graph {
     fn graph_id(&'a self) -> dot::Id<'a> {
-        dot::Id::new("graph").unwrap()
+        dot::Id::new("exampl").unwrap()
     }
     fn node_id(&'a self, n: &NodeIndex) -> dot::Id<'a> {
         dot::Id::new(format!("N{}", n)).unwrap()
     }
     fn node_label<'b>(&'b self, n: &NodeIndex) -> dot::LabelText<'b> {
-        dot::LabelText::LabelStr(self.nodes[*n].into())
+        dot::LabelText::LabelStr(self.nodes[*n].name.into())
+    }
+    fn kind(&self) -> dot::Kind {
+        dot::Kind::Graph
     }
     // fn edge_label<'b>(&'b self, _: &EdgeIndex) -> dot::LabelText<'b> {
     //     dot::LabelText::LabelStr("&sube;".into())
@@ -26,7 +35,15 @@ impl<'a> dot::GraphWalk<'a, NodeIndex, EdgeIndex<'a>> for Graph {
         (0..self.nodes.len()).collect()
     }
     fn edges(&'a self) -> dot::Edges<'a, EdgeIndex<'a>> {
-        self.edges.iter().collect()
+        // keep only half of the edges b/c undirected graph
+        let mut iter = self.edges.iter();
+        let mut edge_list = vec![];
+
+        while let Some(x) = iter.nth(1) {
+            edge_list.push(x);
+        }
+
+        edge_list.into()
     }
     fn source(&self, e: &EdgeIndex) -> NodeIndex {
         e.0
@@ -44,9 +61,13 @@ impl Graph {
         }
     }
 
-    pub fn add_node(&mut self, id: &'static str) -> NodeIndex {
+    pub fn add_node(&mut self, id: &'static str, weight: u32) -> NodeIndex {
         let index = self.nodes.len();
-        self.nodes.push(id);
+        self.nodes.push(NodeData {
+            name: id,
+            weight: weight,
+        });
+        
         index
     }
 
